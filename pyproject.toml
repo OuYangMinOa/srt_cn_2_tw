@@ -8,4 +8,5 @@ dependencies = [
     "googletrans==4.0.0rc1",
     "opencc>=1.1.9",
     "pygoogletranslation>=2.0.6",
+    "pyqt6>=6.8.1",
 ]
