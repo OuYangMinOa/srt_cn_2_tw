@@ -9,7 +9,6 @@ from tqdm    import tqdm
 from pathlib import Path
 
 class MyTranslator:
-
     def __init__(self):
         self.cc = OpenCC('s2twp')
 
@@ -32,11 +31,8 @@ class MyTranslator:
         new_file_path = this_file.parent / f"{this_file.stem}_tw.srt"
         all_text = this_file.read_text(encoding = "utf-8")
         new_text = ""
-        for each_block in tqdm(all_text.split("\n\n")):
-            cn_text = each_block.split("\n")[-1]
-            tw_text = self.do_translate(cn_text)
-            this_str = "\n".join(each_block.split("\n")[:-1]) + "\n" + tw_text + "\n\n"
-            new_text += this_str
+        for each_line in tqdm(all_text.split("\n")):
+            new_text += self.do_translate(each_line) + "\n"
         new_file_path.write_text(new_text, encoding = "utf-8")
         print(f"Translated file saved to {new_file_path}")
         return new_text.split("\n\n")
