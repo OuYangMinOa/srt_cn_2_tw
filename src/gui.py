@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWidget
-from PyQt6.QtCore   import Qt, QUrl
-from PyQt6.QtGui    import QDragEnterEvent, QMouseEvent
+from PyQt6.QtCore    import Qt, QUrl
+from PyQt6.QtGui     import QDragEnterEvent, QMouseEvent
 
 from .translator import MyTranslator
 
@@ -21,12 +21,12 @@ class MainWindow(QMainWindow):
         self.label = QLabel("點擊任意地方來選擇檔案\nor\n把任何文字文件拖到这里\n\n我都會幫你轉換把簡體成繁體 !")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setStyleSheet("font-size: 20px;")
+        # label client event
         self.label.mousePressEvent = self.label_press_event
         self.label.mouseReleaseEvent = self.label_click_event
-        self.layout.addWidget(self.label)
-        # label client event
         
-
+        self.layout.addWidget(self.label)
+        
         self.setAcceptDrops(True)
 
     def label_move_event(self, event : QMouseEvent):
