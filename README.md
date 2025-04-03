@@ -1,4 +1,4 @@
-# Download 
+# Download exe
 
 [下載點我](https://github.com/OuYangMinOa/srt_cn_2_tw/releases/tag/v0.0.1)
     
@@ -9,7 +9,7 @@
 ![alt text](image-1.png)
 
 
-# 自己下載執行
+# 自己下載環境執行
 
 ```
 git clone https://github.com/OuYangMinOa/srt_cn_2_tw
