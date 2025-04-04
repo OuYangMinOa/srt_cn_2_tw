@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
         
         for each in choose_file:
             self.process_file(each)
-        self.label.setText(f"已全部處理完畢\n你可以繼續拖放其他文件\nor\n把任何文字文件拖到这里")
+        self.label.setText(f"已全部處理完畢\n\n你可以繼續拖放其他文件\nor\n點擊任意地方來選擇檔案")
 
     def label_dragEnterEvent(self, event : QDragEnterEvent):
         if event.mimeData().hasUrls():
@@ -68,13 +68,15 @@ class MainWindow(QMainWindow):
                 print(f"文件 {file_path} 不存在 !\n請選擇其他文件")
                 continue
             self.process_file(file_path)
-        self.label.setText(f"已全部處理完畢\n你可以繼續拖放其他文件\nor\n把任何文字文件拖到这里")
+        self.label.setText(f"已全部處理完畢\n\n你可以繼續拖放其他文件\nor\n點擊任意地方來選擇檔案")
         self.label.setStyleSheet("font-size: 20px;")
 
     def process_file(self, file_path : str):
         self.label.setText(f"處理 {file_path} 中 ...")
         self.label.setStyleSheet("font-size: 20px;")
         result : str = MyTranslator().tran2tw(file_path)
+        total_lines = len(result.split("\n"))
+        self.label.setText(f"處理 {file_path} 完成 !\n一共 {total_lines} 行\n\n請選擇保存文件的路徑")
         self.save_file(content = result, original_name = file_path)
 
     def save_file(self, content : str, original_name : str = "translated.srt"):
@@ -86,7 +88,7 @@ class MainWindow(QMainWindow):
         if file_name:
             with open(file_name, 'w', encoding = "utf-8") as file:
                 file.write(content)
-                self.label.setText(f"文件已保存到: {file_name}\n你可以繼續拖放其他文件\nor\n把任何文字文件拖到这里")
+                self.label.setText(f"文件已保存到: {file_name}\n\n你可以繼續拖放其他文件\nor\n點擊任意地方來選擇檔案")
 
     def select_file(self, suffix : str, default_path : Path):
         file_name, _ = QFileDialog.getSaveFileName(self, caption = "保存文件", directory = str(default_path), filter = f"{suffix} Files (*.{suffix});;All Files (*)")
