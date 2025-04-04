@@ -32,3 +32,8 @@ uv sync
 ```
 uv run python main.py
 ```
+
+### 或者使用 `pyinstaller` 包裝成exe
+```
+pyinstaller .\ouyang_srt_converter.spec
+```

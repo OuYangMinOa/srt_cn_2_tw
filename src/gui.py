@@ -21,13 +21,15 @@ class MainWindow(QMainWindow):
         self.label = QLabel("點擊任意地方來選擇檔案\nor\n把任何文字文件拖到这里\n\n我都會幫你轉換把簡體成繁體 !")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setStyleSheet("font-size: 20px;")
+        self.label.setAcceptDrops(True)
         # label client event
-        self.label.mousePressEvent = self.label_press_event
+        self.label.mousePressEvent   = self.label_press_event
         self.label.mouseReleaseEvent = self.label_click_event
-        
+        self.label.dragEnterEvent    = self.label_dragEnterEvent
+        self.label.dropEvent         = self.label_dropEvent
+
         self.layout.addWidget(self.label)
         
-        self.setAcceptDrops(True)
 
     def label_move_event(self, event : QMouseEvent):
         self.label.setStyleSheet("font-size: 20px; color: #d3b08d;")
@@ -46,15 +48,15 @@ class MainWindow(QMainWindow):
         
         for each in choose_file:
             self.process_file(each)
-        self.label.setText(f"已全部處理完畢\n你可以繼續拖放其他文件")
+        self.label.setText(f"已全部處理完畢\n你可以繼續拖放其他文件\nor\n把任何文字文件拖到这里")
 
-    def dragEnterEvent(self, event : QDragEnterEvent):
+    def label_dragEnterEvent(self, event : QDragEnterEvent):
         if event.mimeData().hasUrls():
             event.accept()
         else:
             event.ignore()
 
-    def dropEvent(self, event : QDragEnterEvent):
+    def label_dropEvent(self, event : QDragEnterEvent):
         Qurl_list : list[QUrl] = event.mimeData().urls()# [0].toLocalFile()
         for each in Qurl_list:
             file_path =  Path(each.toLocalFile())
@@ -66,7 +68,7 @@ class MainWindow(QMainWindow):
                 print(f"文件 {file_path} 不存在 !\n請選擇其他文件")
                 continue
             self.process_file(file_path)
-        self.label.setText(f"已全部處理完畢\n你可以繼續拖放其他文件")
+        self.label.setText(f"已全部處理完畢\n你可以繼續拖放其他文件\nor\n把任何文字文件拖到这里")
         self.label.setStyleSheet("font-size: 20px;")
 
     def process_file(self, file_path : str):
@@ -84,7 +86,7 @@ class MainWindow(QMainWindow):
         if file_name:
             with open(file_name, 'w', encoding = "utf-8") as file:
                 file.write(content)
-                self.label.setText(f"文件已保存到: {file_name}\n你可以繼續拖放其他文件")
+                self.label.setText(f"文件已保存到: {file_name}\n你可以繼續拖放其他文件\nor\n把任何文字文件拖到这里")
 
     def select_file(self, suffix : str, default_path : Path):
         file_name, _ = QFileDialog.getSaveFileName(self, caption = "保存文件", directory = str(default_path), filter = f"{suffix} Files (*.{suffix});;All Files (*)")
