@@ -1,44 +1,93 @@
 import sys
 from pathlib import Path
 
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWidget, QHBoxLayout, QTextEdit
 from PyQt6.QtCore    import Qt, QUrl
 from PyQt6.QtGui     import QDragEnterEvent, QMouseEvent
 
 from .translator import MyTranslator
 
 class MainWindow(QMainWindow):
+    LABEL_SYTLE = "border: 2px solid white; border-radius: 5px;font-size: 20px;"
     def __init__(self):
         super().__init__()
+
+        self.mytrans_cn2tw = MyTranslator()
+        self.mytrans_tw2cn = MyTranslator(mode = "tw2s")
         self.setWindowTitle("  SRT簡體轉繁體，歐陽出品")
         self.setGeometry(100, 100, 600, 400)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
-        self.layout : QVBoxLayout= QVBoxLayout()
-        self.central_widget.setLayout(self.layout)
+        self._layout = QVBoxLayout()
+        self.central_widget.setLayout(self._layout)
 
         self.label = QLabel("點擊任意地方來選擇檔案\nor\n把任何文字文件拖到这里\n\n我都會幫你轉換把簡體成繁體 !")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setStyleSheet("font-size: 20px;")
+        self.label.setStyleSheet(self.LABEL_SYTLE)
         self.label.setAcceptDrops(True)
+        self._layout.addWidget(self.label)
+
+        # 添加一個水平佈局來放置兩個輸入框
+        self.input_layout = QHBoxLayout()
+
+        # 創建左側的輸入框
+        self.use_left_input_event = True
+        self.left_input = QTextEdit()
+        self.left_input.setPlaceholderText("輸入簡體")
+        self.left_input.textChanged.connect(self.left_input_event)
+        self.input_layout.addWidget(self.left_input)
+
+        # 創建右側輸輸入簡體
+        self.use_right_input_event = True
+        self.right_input = QTextEdit()
+        self.right_input.setPlaceholderText("得到繁體")
+        self.right_input.textChanged.connect(self.right_input_event)
+        self.input_layout.addWidget(self.right_input)
+
+        self.right_input.verticalScrollBar().valueChanged.connect(self.left_input.verticalScrollBar().setValue)
+        self.right_input.horizontalScrollBar().valueChanged.connect(self.left_input.horizontalScrollBar().setValue)
+        self.left_input.verticalScrollBar().valueChanged.connect(self.right_input.verticalScrollBar().setValue)
+        self.left_input.horizontalScrollBar().valueChanged.connect(self.right_input.horizontalScrollBar().setValue)
+
+        self._layout.addLayout(self.input_layout)
+
         # label client event
         self.label.mousePressEvent   = self.label_press_event
         self.label.mouseReleaseEvent = self.label_click_event
         self.label.dragEnterEvent    = self.label_dragEnterEvent
         self.label.dropEvent         = self.label_dropEvent
 
-        self.layout.addWidget(self.label)
-        
+    def left_input_event(self):
+        if not self.use_left_input_event:
+            return
+        content = self.left_input.toPlainText()
+        if content == "":
+            return
+        result : str = self.mytrans_cn2tw.tran2tw(content)
+        self.use_right_input_event = False
+        self.right_input.setText(result)
+        self.use_right_input_event = True
+
+    def right_input_event(self):
+        if not self.use_right_input_event:
+            return
+        content = self.right_input.toPlainText()
+        if content == "":
+            return
+        result : str = self.mytrans_tw2cn.tran2tw(content)
+        self.use_left_input_event = False
+        self.left_input.setText(result)
+        self.use_left_input_event = True
 
     def label_move_event(self, event : QMouseEvent):
-        self.label.setStyleSheet("font-size: 20px; color: #d3b08d;")
+        self.label.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
     
     def label_press_event(self, event : QMouseEvent):
-        self.label.setStyleSheet("font-size: 20px; color: #d3b08d;")
+        self.label.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
 
     def label_click_event(self, event : QMouseEvent):
-        self.label.setStyleSheet("font-size: 20px; color: white;")
+        self.label.setStyleSheet(self.LABEL_SYTLE +  "color: white;")
         # check if mouse release event is in label area
         if not self.label.rect().contains(event.pos()):
             return
@@ -69,12 +118,19 @@ class MainWindow(QMainWindow):
                 continue
             self.process_file(file_path)
         self.label.setText(f"已全部處理完畢\n\n你可以繼續拖放其他文件\nor\n點擊任意地方來選擇檔案")
-        self.label.setStyleSheet("font-size: 20px;")
+        self.label.setStyleSheet(self.LABEL_SYTLE)
 
     def process_file(self, file_path : str):
         self.label.setText(f"處理 {file_path} 中 ...")
-        self.label.setStyleSheet("font-size: 20px;")
-        result : str = MyTranslator().tran2tw(file_path)
+        self.label.setStyleSheet(self.LABEL_SYTLE)
+        content : str = self.mytrans_cn2tw.read_file(file_path)
+        self.use_left_input_event = False
+        self.use_right_input_event = False
+        self.left_input.setText(content)
+        result : str = self.mytrans_cn2tw.tran2tw(content)
+        self.right_input.setText(result)
+        self.use_left_input_event = True
+        self.use_right_input_event = True
         total_lines = len(result.split("\n"))
         self.label.setText(f"處理 {file_path} 完成 !\n一共 {total_lines} 行\n\n請選擇保存文件的路徑")
         self.save_file(content = result, original_name = file_path)
