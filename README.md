@@ -8,9 +8,11 @@
 ### - 將文件拖移進去即可
 ![alt text](image-1.png)
 
-### 或者點擊畫面選取檔案
+### - 或者點擊畫面選取檔案
 ![alt text](image-2.png)
 
+### - 可以做一些修正
+![alt text](image-3.png)
 
 # 自己下載環境執行
 
