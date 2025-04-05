@@ -14,6 +14,9 @@ class MainWindow(QMainWindow):
 
         self.mytrans_cn2tw = MyTranslator()
         self.mytrans_tw2cn = MyTranslator(mode = "tw2s")
+        self.setup_gui()
+
+    def setup_gui(self):
         self.setWindowTitle("  SRT簡體轉繁體，歐陽出品")
         self.setGeometry(100, 100, 600, 400)
 
@@ -38,13 +41,14 @@ class MainWindow(QMainWindow):
         self.left_input.textChanged.connect(self.left_input_event)
         self.input_layout.addWidget(self.left_input)
 
-        # 創建右側輸輸入簡體
+        # 創建右側輸 繁體
         self.use_right_input_event = True
         self.right_input = QTextEdit()
         self.right_input.setPlaceholderText("得到繁體")
         self.right_input.textChanged.connect(self.right_input_event)
         self.input_layout.addWidget(self.right_input)
 
+        # 設置輸入框的滾動條同步
         self.right_input.verticalScrollBar().valueChanged.connect(self.left_input.verticalScrollBar().setValue)
         self.right_input.horizontalScrollBar().valueChanged.connect(self.left_input.horizontalScrollBar().setValue)
         self.left_input.verticalScrollBar().valueChanged.connect(self.right_input.verticalScrollBar().setValue)
@@ -124,12 +128,12 @@ class MainWindow(QMainWindow):
         self.label.setText(f"處理 {file_path} 中 ...")
         self.label.setStyleSheet(self.LABEL_SYTLE)
         content : str = self.mytrans_cn2tw.read_file(file_path)
-        self.use_left_input_event = False
+        self.use_left_input_event  = False
         self.use_right_input_event = False
         self.left_input.setText(content)
         result : str = self.mytrans_cn2tw.tran2tw(content)
         self.right_input.setText(result)
-        self.use_left_input_event = True
+        self.use_left_input_event  = True
         self.use_right_input_event = True
         total_lines = len(result.split("\n"))
         self.label.setText(f"處理 {file_path} 完成 !\n一共 {total_lines} 行\n\n請選擇保存文件的路徑")
