@@ -56,6 +56,10 @@ class MainWindow(QMainWindow):
 
         self._layout.addLayout(self.input_layout)
 
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addStretch()
+        self._layout.addLayout(self.button_layout)
+
         # label client event
         self.label.mousePressEvent   = self.label_press_event
         self.label.mouseReleaseEvent = self.label_click_event
