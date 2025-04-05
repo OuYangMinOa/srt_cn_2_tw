@@ -11,9 +11,9 @@ class MainWindow(QMainWindow):
     LABEL_SYTLE = "border: 2px solid white; border-radius: 5px;font-size: 20px;"
     def __init__(self):
         super().__init__()
-
-        self.mytrans_cn2tw = MyTranslator()
-        self.mytrans_tw2cn = MyTranslator(mode = "tw2s")
+        self.final_filepath = "translated.srt"
+        self.mytrans_cn2tw  = MyTranslator()
+        self.mytrans_tw2cn  = MyTranslator(mode = "tw2s")
         self.setup_gui()
 
     def setup_gui(self):
@@ -29,6 +29,11 @@ class MainWindow(QMainWindow):
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setStyleSheet(self.LABEL_SYTLE)
         self.label.setAcceptDrops(True)
+        # label client event
+        self.label.mousePressEvent   = self.label_press_event
+        self.label.mouseReleaseEvent = self.label_click_event
+        self.label.dragEnterEvent    = self.label_dragEnterEvent
+        self.label.dropEvent         = self.label_dropEvent
         self._layout.addWidget(self.label)
 
         # 添加一個水平佈局來放置兩個輸入框
@@ -57,14 +62,15 @@ class MainWindow(QMainWindow):
         self._layout.addLayout(self.input_layout)
 
         self.button_layout = QHBoxLayout()
-        self.button_layout.addStretch()
-        self._layout.addLayout(self.button_layout)
-
+        self.save_button = QLabel("保存文件")
+        self.save_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.save_button.setStyleSheet(self.LABEL_SYTLE)
+        self.button_layout.addWidget(self.save_button)
         # label client event
-        self.label.mousePressEvent   = self.label_press_event
-        self.label.mouseReleaseEvent = self.label_click_event
-        self.label.dragEnterEvent    = self.label_dragEnterEvent
-        self.label.dropEvent         = self.label_dropEvent
+        self.save_button.mousePressEvent   = self.save_button_press_event
+        self.save_button.mouseReleaseEvent = self.save_button_click_event
+
+        self._layout.addLayout(self.button_layout)
 
     def left_input_event(self):
         if not self.use_left_input_event:
@@ -72,7 +78,7 @@ class MainWindow(QMainWindow):
         content = self.left_input.toPlainText()
         if content == "":
             return
-        result : str = self.mytrans_cn2tw.tran2tw(content)
+        result : str = self.mytrans_cn2tw.translate(content, show_progress = False)
         self.use_right_input_event = False
         self.right_input.setText(result)
         self.use_right_input_event = True
@@ -83,13 +89,23 @@ class MainWindow(QMainWindow):
         content = self.right_input.toPlainText()
         if content == "":
             return
-        result : str = self.mytrans_tw2cn.tran2tw(content)
+        result : str = self.mytrans_tw2cn.translate(content, show_progress = False)
         self.use_left_input_event = False
         self.left_input.setText(result)
         self.use_left_input_event = True
 
-    def label_move_event(self, event : QMouseEvent):
-        self.label.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
+    def save_button_click_event(self, event : QMouseEvent):
+        self.save_button.setStyleSheet(self.LABEL_SYTLE + "color: white;")
+        # check if mouse release event is in label area
+        if not self.label.rect().contains(event.pos()):
+            return
+        save_content = self.right_input.toPlainText()
+        if save_content == "":
+            return
+        self.save_file(content = save_content, original_name = self.final_filepath)
+        
+    def save_button_press_event(self, event : QMouseEvent):
+        self.save_button.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
     
     def label_press_event(self, event : QMouseEvent):
         self.label.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
@@ -128,14 +144,15 @@ class MainWindow(QMainWindow):
         self.label.setText(f"已全部處理完畢\n\n你可以繼續拖放其他文件\nor\n點擊任意地方來選擇檔案")
         self.label.setStyleSheet(self.LABEL_SYTLE)
 
-    def process_file(self, file_path : str):
+    def process_file(self, file_path : str, show_progress : bool = True):
         self.label.setText(f"處理 {file_path} 中 ...")
+        self.final_filepath = file_path
         self.label.setStyleSheet(self.LABEL_SYTLE)
         content : str = self.mytrans_cn2tw.read_file(file_path)
         self.use_left_input_event  = False
         self.use_right_input_event = False
         self.left_input.setText(content)
-        result : str = self.mytrans_cn2tw.tran2tw(content)
+        result : str = self.mytrans_cn2tw.translate(content, show_progress = show_progress)
         self.right_input.setText(result)
         self.use_left_input_event  = True
         self.use_right_input_event = True

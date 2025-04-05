@@ -21,13 +21,17 @@ class MyTranslator:
         all_text = this_file.read_text(encoding = "utf-8")
         return all_text
 
-    def tran2tw(self, content: str) -> str:
+    def translate(self, content: str, show_progress : bool = True) -> str:
         """
         Read str
         :param content: str
         :return: List of lines in the srt file
         """
         new_text = ""
-        for each_line in tqdm(content.split("\n")):
+        if show_progress:
+            tasks = tqdm(content.split("\n"), desc="Processing")
+        else:
+            tasks = content.split("\n")
+        for each_line in tasks:
             new_text += self.do_translate(each_line) + "\n"
         return new_text
