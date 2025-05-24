@@ -1,11 +1,32 @@
-import sys
+from __future__ import annotations
 from pathlib import Path
+import sys
 
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWidget, QHBoxLayout, QTextEdit
+from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWidget, QHBoxLayout, QTextEdit, QComboBox
 from PyQt6.QtCore    import Qt, QUrl
 from PyQt6.QtGui     import QDragEnterEvent, QMouseEvent
 
-from .translator import MyTranslator
+from .translator import MyTranslator, MyTranslator2
+from enum import Enum
+
+
+class Lang(Enum):
+    EN = 'en'
+    TW = 'zh-TW'
+    CN = 'zh-CN'
+
+    @classmethod
+    def from_str(cls, string : str) -> Lang:
+        if string == "英文":
+            return Lang.EN
+
+        if string == "繁體":
+            return Lang.TW
+
+        if string == "簡體":
+            return Lang.CN
+
+        raise Exception("Unsupport language")
 
 class MainWindow(QMainWindow):
     LABEL_SYTLE = "border: 2px solid white; border-radius: 5px;font-size: 20px;"
@@ -14,13 +35,14 @@ class MainWindow(QMainWindow):
         self.final_filepath = "translated.srt"
         self.mytrans_cn2tw  = MyTranslator()
         self.mytrans_tw2cn  = MyTranslator(mode = "tw2s")
+        self.mytrans_2en    = MyTranslator2()
         self.setup_gui()
 
     def setup_gui(self):
         self.setWindowTitle("  SRT簡體轉繁體，歐陽出品")
         self.setGeometry(100, 100, 600, 400)
 
-        self.central_widget = QWidget()
+        self.central_widget : QWidget = QWidget()
         self.setCentralWidget(self.central_widget)
         self._layout = QVBoxLayout()
         self.central_widget.setLayout(self._layout)
@@ -36,21 +58,30 @@ class MainWindow(QMainWindow):
         self.label.dropEvent         = self.label_dropEvent
         self._layout.addWidget(self.label)
 
+        self.combo_left = QComboBox()
+        self.combo_left.addItems(["簡體","繁體","英文" ])
+
+        self.combo_right = QComboBox()
+        self.combo_right.addItems(["繁體","英文", "簡體"])
+
+        h_layout = QHBoxLayout()
+        h_layout.addWidget(self.combo_left)
+        h_layout.addWidget(self.combo_right)
+
+        self._layout.addLayout(h_layout)
+
+
         # 添加一個水平佈局來放置兩個輸入框
         self.input_layout = QHBoxLayout()
 
         # 創建左側的輸入框
-        self.use_left_input_event = True
         self.left_input = QTextEdit()
-        self.left_input.setPlaceholderText("輸入簡體")
-        self.left_input.textChanged.connect(self.left_input_event)
+        self.left_input.setPlaceholderText("輸入")
         self.input_layout.addWidget(self.left_input)
 
         # 創建右側輸 繁體
-        self.use_right_input_event = True
         self.right_input = QTextEdit()
         self.right_input.setPlaceholderText("得到繁體")
-        self.right_input.textChanged.connect(self.right_input_event)
         self.input_layout.addWidget(self.right_input)
 
         # 設置輸入框的滾動條同步
@@ -61,6 +92,27 @@ class MainWindow(QMainWindow):
 
         self._layout.addLayout(self.input_layout)
 
+
+        self.clear_convert_button = QHBoxLayout()
+        # 清除
+        self.clear_button = QLabel("清除")
+        self.clear_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.clear_button.setStyleSheet(self.LABEL_SYTLE)
+        self.clear_convert_button.addWidget(self.clear_button)
+        self.clear_button.mousePressEvent   = self.clear_button_press
+        self.clear_button.mouseReleaseEvent = self.clear_button_click_event
+        # 轉換
+        self.convert_button = QLabel("轉換")
+        self.convert_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.convert_button.setStyleSheet(self.LABEL_SYTLE)
+        self.clear_convert_button.addWidget(self.convert_button)
+        self.convert_button.mousePressEvent   = self.convert_button_press
+        self.convert_button.mouseReleaseEvent = self.convert_button_click_event
+        # label client event
+        self._layout.addLayout(self.clear_convert_button)
+
+
+
         self.button_layout = QHBoxLayout()
         self.save_button = QLabel("保存文件")
         self.save_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -69,30 +121,19 @@ class MainWindow(QMainWindow):
         # label client event
         self.save_button.mousePressEvent   = self.save_button_press_event
         self.save_button.mouseReleaseEvent = self.save_button_click_event
-
         self._layout.addLayout(self.button_layout)
 
-    def left_input_event(self):
-        if not self.use_left_input_event:
-            return
-        content = self.left_input.toPlainText()
-        if content == "":
-            return
-        result : str = self.mytrans_cn2tw.translate(content, show_progress = False)
-        self.use_right_input_event = False
-        self.right_input.setText(result)
-        self.use_right_input_event = True
+    def clear_button_press(self, event : QMouseEvent):
+        self.clear_button.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
 
-    def right_input_event(self):
-        if not self.use_right_input_event:
-            return
-        content = self.right_input.toPlainText()
-        if content == "":
-            return
-        result : str = self.mytrans_tw2cn.translate(content, show_progress = False)
-        self.use_left_input_event = False
-        self.left_input.setText(result)
-        self.use_left_input_event = True
+    def clear_button_click_event(self, event : QMouseEvent):
+        self.clear_button.setStyleSheet(self.LABEL_SYTLE + "color: white;")
+
+    def convert_button_press(self, event : QMouseEvent):
+        self.convert_button.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
+
+    def convert_button_click_event(self, event : QMouseEvent):
+        self.convert_button.setStyleSheet(self.LABEL_SYTLE + "color: white;")
 
     def save_button_click_event(self, event : QMouseEvent):
         self.save_button.setStyleSheet(self.LABEL_SYTLE + "color: white;")
@@ -148,17 +189,13 @@ class MainWindow(QMainWindow):
         self.label.setText(f"處理 {file_path} 中 ...")
         self.final_filepath = file_path
         self.label.setStyleSheet(self.LABEL_SYTLE)
-        content : str = self.mytrans_cn2tw.read_file(file_path)
-        self.use_left_input_event  = False
-        self.use_right_input_event = False
-        self.left_input.setText(content)
-        result : str = self.mytrans_cn2tw.translate(content, show_progress = show_progress)
-        self.right_input.setText(result)
-        self.use_left_input_event  = True
-        self.use_right_input_event = True
-        total_lines = len(result.split("\n"))
+        raw_text : str = self.mytrans_cn2tw.read_file(file_path)
+        self.left_input.setText(raw_text)
+        translated_text : str = self.mytrans_cn2tw.translate(raw_text, show_progress = show_progress)
+        self.right_input.setText(translated_text)
+        total_lines = len(translated_text.split("\n"))
         self.label.setText(f"處理 {file_path} 完成 !\n一共 {total_lines} 行\n\n請選擇保存文件的路徑")
-        self.save_file(content = result, original_name = file_path)
+        self.save_file(content = translated_text, original_name = file_path)
 
     def save_file(self, content : str, original_name : str = "translated.srt"):
         origin_file  = Path(original_name)

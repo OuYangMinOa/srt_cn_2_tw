@@ -1,3 +1,4 @@
+from deep_translator import GoogleTranslator, MicrosoftTranslator
 from opencc import OpenCC
 
 from pathlib import Path
@@ -15,8 +16,6 @@ class MyTranslator:
         :return: Texts in TW
         """
         return self.cc.convert(text)
-    
-    def read_file(self, file_full_path: str) -> str:
         this_file = Path(file_full_path)
         all_text = this_file.read_text(encoding = "utf-8")
         return all_text
@@ -30,8 +29,14 @@ class MyTranslator:
         new_text = ""
         if show_progress:
             tasks = tqdm(content.split("\n"), desc="Processing")
+
         else:
             tasks = content.split("\n")
         for each_line in tasks:
             new_text += self.do_translate(each_line) + "\n"
         return new_text
+
+
+class MyTranslator2:
+    def __init__(self) -> None:
+        ...
