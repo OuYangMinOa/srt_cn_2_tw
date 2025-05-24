@@ -3,6 +3,7 @@ from pathlib import Path
 import time
 
 from googletrans import Translator
+from deep_translator import GoogleTranslator, PonsTranslator
 from opencc import OpenCC
 from tqdm import tqdm
 import asyncio
@@ -52,11 +53,13 @@ class MyTranslator(MyTranslateBase):
 
 
 class MyTranslator2(MyTranslateBase):
-    def __init__(self, dest : str) -> None:
+    def __init__(self, dest : str, source = "auto") -> None:
         self.dest = dest
-        self.max_length : int = 4500
+        self.source = source
+        self.max_length : int = 1500
 
         self._translator_api_list = [
+            GoogleTranslator(source=source, target= dest,),
             Translator(),
         ]
 
@@ -93,9 +96,24 @@ class MyTranslator2(MyTranslateBase):
                 this_index += 1
         return "\n".join(text_splited)
 
-    async def _translate_each(self, text : str, index = 0) -> str:
-        return (await self._translator_api_list[index].translate(text=text, dest = self.dest)).text
-        # return "\n".join(["test" for _ in range(text.count("\n") + 2)])
+    def _translate_each(self, text : str, index = 0) -> str:
+        try:
+            return self._translator_api_list[index].translate(text)
+        except Exception as e:
+            # print(e)
+            # print(f"Google translated fail, use another api")
+            try:
+                loop = asyncio.get_event_loop()
+            except:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            return loop.run_until_complete(self._translat_with_googletrans(text, index))
+
+    async def _translat_with_googletrans(self, text, index : int):
+        result = await self._translator_api_list[index+1].translate(text = text, dest = self.dest.lower(), src = self.source.lower())
+        return result.text
+
+       # return "\n".join(["test" for _ in range(text.count("\n") + 2)])
 
     def cut_block(self, text : list[str]) -> list[str]:
         total_text = "\n".join(text)
@@ -112,6 +130,15 @@ class MyTranslator2(MyTranslateBase):
                 temp_text = ""
         return output
 
+    def translate_block(self, block_text_list : str) -> str:
+        translated_str : str = ""
+        for each in tqdm(block_text_list):
+            this_result = self._translate_each(each)
+            print(this_result)
+            time.sleep(3)
+            translated_str = translated_str + this_result + "\n"
+        return translated_str.strip()
+
     def do_translate(self, text: str) -> str:
         text = text.strip()
         # block_text_list : list[str] = self.cut_block(text.split("\n"))
@@ -126,19 +153,19 @@ class MyTranslator2(MyTranslateBase):
 
         plain_text_list : list[str] = self.get_plain_text_list_from_str(text)
         block_text_list : list[str] = self.cut_block(plain_text_list)
-        translated_str : str = ""
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        return self.insert_back2text(text, self.translate_block(block_text_list))
 
-        for each in tqdm(block_text_list):
-            this_result = loop.run_until_complete(self._translate_each(each))
-            time.sleep(3)
-            translated_str = translated_str + this_result + "\n"
-        return self.insert_back2text(text, translated_str)
+class MyTranslator3:
+    def __init__(self, source : str, dest : str) -> None:
+        if source == "zh-TW" and dest =='en':
+            self.t1 = MyTranslator(mode = "tw2s")
+            self.t2 = MyTranslator2(source='zh-CN', dest = 'en')
+        if dest == "zh-TW" and source == 'en':
+            self.t1 = MyTranslator2(source='en', dest = 'zh-CN')
+            self.t2 = MyTranslator(mode = "s2twp")
 
+    def do_translate(self, text):
+        return self.t2.do_translate(self.t1.do_translate(text))
 
 
 

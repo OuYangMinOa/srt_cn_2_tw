@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QVBo
 from PyQt6.QtCore    import Qt, QUrl, QThread, pyqtSignal
 from PyQt6.QtGui     import QDragEnterEvent, QMouseEvent
 
-from .translator import MyTranslator, MyTranslator2
+from .translator import MyTranslator, MyTranslator2, MyTranslator3
 from enum import Enum
 from threading import Thread
 
@@ -52,9 +52,11 @@ class MainWindow(QMainWindow):
         self.is_translating = False
         self.mytrans_cn2tw  = MyTranslator()
         self.mytrans_tw2cn  = MyTranslator(mode = "tw2s")
-        self.mytrans_2cn    = MyTranslator2(dest = "zh-cn")
-        self.mytrans_2tw    = MyTranslator2(dest = "zh-tw")
-        self.mytrans_2en    = MyTranslator2(dest = "en")
+        self.mytrans_2cn    = MyTranslator2(dest = "zh-CN")
+        self.mytrans_2en    = MyTranslator2(source = 'zh-CN',dest = "en")
+        self.mytrans_en2tw  = MyTranslator3(source = 'en', dest = 'zh-TW')
+        self.mytrans_tw2en  = MyTranslator3(dest = 'en', source= 'zh-TW')
+
         self.this_end = ""
         self.setup_gui()
 
@@ -121,6 +123,13 @@ class MainWindow(QMainWindow):
         self.clear_convert_button.addWidget(self.clear_button)
         self.clear_button.mousePressEvent   = self.clear_button_press
         self.clear_button.mouseReleaseEvent = self.clear_button_click_event
+        # 左右交換
+        self.switch_button = QLabel("左右交換")
+        self.switch_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.switch_button.setStyleSheet(self.LABEL_SYTLE)
+        self.clear_convert_button.addWidget(self.switch_button)
+        self.switch_button.mousePressEvent   = self.switch_button_press
+        self.switch_button.mouseReleaseEvent = self.switch_button_click_event
         # 轉換
         self.convert_button = QLabel("轉換")
         self.convert_button.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -142,6 +151,22 @@ class MainWindow(QMainWindow):
         self.save_button.mousePressEvent   = self.save_button_press_event
         self.save_button.mouseReleaseEvent = self.save_button_click_event
         self._layout.addLayout(self.button_layout)
+
+    def switch_button_press(self, event : QMouseEvent):
+        self.switch_button.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
+
+    def switch_button_click_event(self, event : QMouseEvent):
+        self.switch_button.setStyleSheet(self.LABEL_SYTLE + "color: white;")
+        # check if mouse release event is in label area
+        if not self.switch_button.rect().contains(event.pos()):
+            return
+        temp = self.right_input.toPlainText()
+        self.right_input.setText(self.left_input.toPlainText())
+        self.left_input.setText(temp)
+
+        temp = self.combo_right.currentText()
+        self.combo_right.setCurrentText(self.combo_left.currentText())
+        self.combo_left.setCurrentText(temp)
 
     def clear_button_press(self, event : QMouseEvent):
         self.clear_button.setStyleSheet(self.LABEL_SYTLE + "color: #d3b08d;")
@@ -223,11 +248,13 @@ class MainWindow(QMainWindow):
             return raw_text
         if Lang.EN in (source, dest):
             if dest == Lang.EN:
+                if source == Lang.TW:
+                    return self.mytrans_tw2en.do_translate(raw_text)
                 return self.mytrans_2en.do_translate(raw_text)
             if dest == Lang.CN:
                 return self.mytrans_2cn.do_translate(raw_text)
             if dest == Lang.TW:
-                return self.mytrans_2tw.do_translate(raw_text)
+                return self.mytrans_en2tw.do_translate(raw_text)
 
         if dest == Lang.CN:
             return self.mytrans_tw2cn.do_translate(raw_text)
@@ -238,19 +265,22 @@ class MainWindow(QMainWindow):
 
     def register_do_translate(self, raw_text : str):
         dest   : Lang = Lang.from_str(self.combo_right.currentText())
+        self.right_input.clear()
         self.right_input.setText("翻譯中 請稍後 ... ")
         self.thread = TranslateThread( func = self.do_translate, text=raw_text)
-        self.thread.trans_signal.connect(self.right_input.setText)
+        self.thread.trans_signal.connect(self.update_right_text)
         self.thread.start()
         self.this_end = dest.value
 
+    def update_right_text(self, text:str):
+        self.right_input.clear()
+        self.right_input.setText(text)
 
     def process_convert(self, ):
         raw_text : str = self.left_input.toPlainText()
         if raw_text == "":
             return ""
-        translated_text = self.do_translate(raw_text)
-        self.right_input.setText(translated_text)
+        self.register_do_translate(raw_text)
 
     def process_file(self, file_path : str, show_progress : bool = True):
         self.label.setText(f"處理 {file_path} 中 ...")
