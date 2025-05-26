@@ -67,17 +67,17 @@ class TTSWidget(QWidget):
 
         self.voice_box = QComboBox()
         self.voice_box.addItems([
+            "zh-CN-YunxiNeural",            
             "zh-CN-XiaoxiaoNeural",         
             "zh-CN-XiaoyiNeural",           
             "zh-CN-YunjianNeural",          
-            "zh-CN-YunxiNeural",            
             "zh-CN-YunxiaNeural",           
             "zh-CN-YunyangNeural",          
             "zh-CN-liaoning-XiaobeiNeural", 
             "zh-CN-shaanxi-XiaoniNeural",   
             "zh-TW-HsiaoChenNeural", 
             "zh-TW-HsiaoYuNeural",   
-            "zh-TW-YunJheNeural"
+            "zh-TW-YunJheNeural",
         ])
         layout.addWidget(QLabel("選擇聲音"))
         layout.addWidget(self.voice_box)
