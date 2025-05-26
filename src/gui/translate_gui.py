@@ -1,16 +1,12 @@
 from __future__ import annotations
-from io import text_encoding
 from pathlib import Path
-import sys
 
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QFileDialog, QVBoxLayout, QWidget, QHBoxLayout, QTextEdit, QComboBox
+from PyQt6.QtWidgets import QLabel, QFileDialog, QVBoxLayout, QWidget, QHBoxLayout, QTextEdit, QComboBox
 from PyQt6.QtCore    import Qt, QUrl, QThread, pyqtSignal
 from PyQt6.QtGui     import QDragEnterEvent, QMouseEvent
 
-from .translator import MyTranslator, MyTranslator2, MyTranslator3
+from src.utils.translator import MyTranslator, MyTranslator2, MyTranslator3
 from enum import Enum
-from threading import Thread
-
 
 class Lang(Enum):
     EN = 'en'
@@ -30,7 +26,6 @@ class Lang(Enum):
 
         raise Exception("Unsupport language")
 
-
 class TranslateThread(QThread):
     trans_signal = pyqtSignal(str)
 
@@ -43,7 +38,7 @@ class TranslateThread(QThread):
         result = self.func(self.text)
         self.trans_signal.emit(result)
 
-class MainWindow(QMainWindow):
+class TranslateWidget(QWidget):
     LABEL_SYTLE = "border: 2px solid white; border-radius: 5px;font-size: 20px;"
     def __init__(self):
         super().__init__()
@@ -61,11 +56,7 @@ class MainWindow(QMainWindow):
         self.setup_gui()
 
     def setup_gui(self):
-        self.setWindowTitle("  SRT簡體轉繁體，歐陽出品")
-        self.setGeometry(100, 100, 600, 400)
-
-        self.central_widget : QWidget = QWidget()
-        self.setCentralWidget(self.central_widget)
+        self.central_widget = self
         self._layout = QVBoxLayout()
         self.central_widget.setLayout(self._layout)
 

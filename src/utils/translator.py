@@ -7,13 +7,11 @@ from deep_translator import GoogleTranslator, PonsTranslator
 from opencc import OpenCC
 from tqdm import tqdm
 import asyncio
-import random
 
 class MyTranslateBase(ABC):
     @abstractmethod
     def do_translate(self, text : str) -> str:
         ...
-
 
 
 class MyTranslator(MyTranslateBase):
